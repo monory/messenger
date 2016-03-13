@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"encoding/base64"
 	"encoding/json"
 	"log"
 
@@ -43,9 +44,22 @@ func Handler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	if len(r.Form["loginbutton"]) > 0 { // pressed "Log In"
-		fmt.Fprint(w, database.CheckUser(db, r.Form["login"][0], r.Form["password"][0]))
+		if database.CheckUser(db, r.Form["login"][0], r.Form["password"][0]) {
+			token := database.GenerateToken(db, r.Form["login"][0])
+			encodedToken := base64.RawURLEncoding.EncodeToString(token)
+
+			cookie := http.Cookie{Name: "token", Value: encodedToken, MaxAge: 86400 * 7} // Week-long token
+			http.SetCookie(w, &cookie)
+			fmt.Fprintln(w, "Login successful!")
+		} else {
+			fmt.Fprintln(w, "Login failed.")
+		}
 	} else { // pressed "Register"
-		fmt.Fprint(w, database.AddUser(db, r.Form["login"][0], r.Form["password"][0]))
+		if database.AddUser(db, r.Form["login"][0], r.Form["password"][0]) {
+			fmt.Fprintln(w, "Register successful!")
+		} else {
+			fmt.Fprintln(w, "Register failed.")
+		}
 	}
 
 }

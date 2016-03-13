@@ -13,12 +13,12 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	// websocket server
-	server := chat.NewServer("/entry")
+	server := chat.NewServer("/entryhandler")
 	go server.Listen()
 
 	// login-register server
 	db := database.ConnectDatabase("???:???@/messenger")
-	http.HandleFunc("/register", web.MakeHandler(web.Handler, db))
+	http.HandleFunc("/registerhandler", web.MakeHandler(web.Handler, db))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

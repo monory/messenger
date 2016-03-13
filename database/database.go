@@ -6,6 +6,7 @@ import (
 
 	"log"
 
+	"crypto/rand"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -66,4 +67,16 @@ func CheckUser(db *sql.DB, username, password string) bool {
 
 	log.Println("Log in:", username, string(passwordHash))
 	return true
+}
+
+func GenerateToken(db *sql.DB, username string) []byte {
+	token := make([]byte, 64)
+	rand.Read(token)
+
+	_, err := db.Exec("INSERT INTO Tokens (user_id, token) VALUES ((SELECT id FROM Users WHERE login=?), ?)",
+		username, token)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return token
 }
