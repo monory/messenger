@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"net/url"
 
-	"encoding/base64"
 	"encoding/json"
 	"log"
 
 	"io/ioutil"
 
 	"database/sql"
+
 	"github.com/monory/messager-backend/database"
 )
 
@@ -46,9 +46,8 @@ func Handler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if len(r.Form["loginbutton"]) > 0 { // pressed "Log In"
 		if database.CheckUser(db, r.Form["login"][0], r.Form["password"][0]) {
 			token := database.GenerateToken(db, r.Form["login"][0])
-			encodedToken := base64.RawURLEncoding.EncodeToString(token)
 
-			cookie := http.Cookie{Name: "token", Value: encodedToken, MaxAge: 86400 * 7} // Week-long token
+			cookie := http.Cookie{Name: "token", Value: token, MaxAge: 86400 * 7} // Week-long token
 			http.SetCookie(w, &cookie)
 			fmt.Fprintln(w, "Login successful!")
 		} else {

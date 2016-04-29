@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/base64"
 
 	_ "github.com/lib/pq" // to initialize postgres
 
@@ -71,7 +72,7 @@ func CheckUser(db *sql.DB, username, password string) bool {
 	return true
 }
 
-func GenerateToken(db *sql.DB, username string) []byte {
+func GenerateToken(db *sql.DB, username string) string {
 	token := make([]byte, 64)
 	rand.Read(token)
 
@@ -80,5 +81,23 @@ func GenerateToken(db *sql.DB, username string) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return token
+	return base64.RawURLEncoding.EncodeToString(token)
+}
+
+func CheckToken(db *sql.DB, encodedToken string) (string, error) {
+	token, err := base64.RawURLEncoding.DecodeString(encodedToken)
+	if err != nil {
+		return "", err
+	}
+
+	var name string
+	err = db.QueryRow("SELECT login FROM Users WHERE Users.id=(SELECT user_id FROM Tokens WHERE token=$1)", token).Scan(&name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", err
+		}
+		log.Fatal(err)
+	}
+
+	return name, nil
 }

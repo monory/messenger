@@ -1,8 +1,13 @@
 package chat
 
 import (
+	"database/sql"
+	"encoding/base64"
+	"io"
 	"log"
 	"net/http"
+
+	"github.com/monory/messager-backend/database"
 
 	"golang.org/x/net/websocket"
 )
@@ -75,7 +80,7 @@ func (s *Server) sendAll(msg *Message) {
 
 // Listen and serve.
 // It serves client connection and broadcast request.
-func (s *Server) Listen() {
+func (s *Server) Listen(db *sql.DB) {
 
 	log.Println("Listening server...")
 
@@ -88,7 +93,25 @@ func (s *Server) Listen() {
 			}
 		}()
 
-		client := NewClient(ws, s)
+		var encodedToken string
+		err := websocket.Message.Receive(ws, &encodedToken)
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+
+		name, err := database.CheckToken(db, encodedToken)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				log.Println("No such token")
+				return
+			} else if _, ok := err.(base64.CorruptInputError); ok {
+				log.Println("Invalid token")
+				return
+			}
+			log.Fatal(err)
+		}
+
+		client := NewClient(ws, s, name)
 		s.Add(client)
 		client.Listen()
 	}

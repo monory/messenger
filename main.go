@@ -11,13 +11,17 @@ import (
 
 func main() {
 	log.SetFlags(log.Lshortfile)
+	db := database.ConnectDatabase("user=messenger_user password=example_password dbname=messenger")
+	err := db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// websocket server
 	server := chat.NewServer("/entryhandler")
-	go server.Listen()
+	go server.Listen(db)
 
 	// login-register server
-	db := database.ConnectDatabase("user=messenger_user password=example_password dbname=messenger")
 	http.HandleFunc("/registerhandler", web.MakeHandler(web.Handler, db))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
