@@ -17,7 +17,7 @@ func main() {
 	go server.Listen()
 
 	// login-register server
-	db := database.ConnectDatabase("???:???@/messenger")
+	db := database.ConnectDatabase("user=messenger_user password=example_password dbname=messenger")
 	http.HandleFunc("/registerhandler", web.MakeHandler(web.Handler, db))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
