@@ -2,10 +2,6 @@
 
 CREATE DATABASE messenger;
 \connect messenger;
-CREATE USER messenger_user WITH PASSWORD 'example_password';
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO messenger_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO messenger_user;
-
 
 CREATE TABLE Users (
     id              BIGSERIAL PRIMARY KEY,
@@ -48,3 +44,12 @@ CREATE TABLE Tokens (
     user_id         BIGINT NOT NULL REFERENCES Users(id),
     token           BYTEA
 );
+
+
+CREATE USER web_backend WITH PASSWORD 'web_backend_password';
+GRANT ALL ON TABLE users, tokens TO web_backend;
+GRANT ALL ON SEQUENCE users_id_seq, tokens_id_seq TO web_backend;
+
+CREATE USER chat_backend WITH PASSWORD 'chat_backend_password';
+GRANT ALL ON ALL TABLES IN SCHEMA public TO chat_backend;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO chat_backend;
