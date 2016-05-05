@@ -5,7 +5,7 @@ CREATE DATABASE messenger;
 
 CREATE TABLE Users (
     id              BIGSERIAL PRIMARY KEY,
-    login           VARCHAR(64) NOT NULL,
+    login           VARCHAR(64) UNIQUE NOT NULL,
     password_hash   BYTEA NOT NULL,
     shown_name      VARCHAR(256),
     online          BOOLEAN
@@ -42,7 +42,9 @@ CREATE TABLE ChatContacts (
 CREATE TABLE Tokens (
     id              SERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES Users(id),
+    selector        BYTEA UNIQUE
     token           BYTEA
+    expires         TIMESTAMP NOT NULL
 );
 
 
