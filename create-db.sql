@@ -5,7 +5,7 @@ CREATE DATABASE messenger;
 
 CREATE TABLE Users (
     id              BIGSERIAL PRIMARY KEY,
-    login           VARCHAR(64) UNIQUE NOT NULL,
+    username        VARCHAR(64) UNIQUE NOT NULL,
     password_hash   BYTEA NOT NULL,
     shown_name      VARCHAR(256),
     online          BOOLEAN
@@ -19,7 +19,7 @@ CREATE TABLE Chats (
 CREATE TABLE Messages (
     id              BIGSERIAL PRIMARY KEY,
     time_stamp      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    message         VARCHAR(10000),
+    message         VARCHAR(10000) NOT NULL,
     author_id       BIGINT NOT NULL REFERENCES Users(id),
     chat_id         BIGINT NOT NULL REFERENCES Chats(id),
     seen            BOOLEAN DEFAULT FALSE
@@ -42,11 +42,12 @@ CREATE TABLE ChatContacts (
 CREATE TABLE Tokens (
     id              SERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES Users(id),
-    selector        BYTEA UNIQUE
-    token           BYTEA
-    expires         TIMESTAMP NOT NULL
+    selector        BYTEA NOT NULL UNIQUE,
+    token           BYTEA NOT NULL,
+    expires         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 week'
 );
 
+CREATE UNIQUE INDEX ON Tokens USING HASH (selector);
 
 CREATE USER web_backend WITH PASSWORD 'web_backend_password';
 GRANT ALL ON TABLE users, tokens TO web_backend;

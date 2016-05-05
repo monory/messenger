@@ -2,15 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"encoding/base64"
+	"errors"
+	"time"
 
 	_ "github.com/lib/pq" // to initialize postgres
-
-	"log"
-
-	"crypto/rand"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 func ConnectDatabase(dsn string) *sql.DB {
@@ -22,82 +17,66 @@ func ConnectDatabase(dsn string) *sql.DB {
 	return db
 }
 
-func AddUser(db *sql.DB, username, password string) bool {
-	usernameExists := true
-	var id uint64
-	err := db.QueryRow("SELECT id FROM Users WHERE login=$1", username).Scan(&id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			usernameExists = false
-		} else {
-			log.Fatal(err)
-		}
-	}
-
-	if usernameExists {
-		return false
-	}
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 10) // 10 выбрано как хорошее умолчание для стоимости
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = db.Exec("INSERT INTO Users (login, password_hash) VALUES ($1, $2)", username, passwordHash)
-	log.Println("Good register:", username, string(passwordHash))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return true
+type DBToken struct {
+	UserID   int64
+	Selector []byte
+	Token    []byte
+	expires  time.Time
 }
 
-func CheckUser(db *sql.DB, username, password string) bool {
-	var passwordHash []byte
-	err := db.QueryRow("SELECT password_hash FROM Users WHERE login=$1", username).Scan(&passwordHash)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		} else {
-			log.Fatal(err)
-		}
-	}
-
-	err = bcrypt.CompareHashAndPassword(passwordHash, []byte(password))
-	if err != nil {
-		return false
-	}
-
-	log.Println("Log in:", username, string(passwordHash))
-	return true
+func AddUser(db *sql.DB, username string, passwordHash []byte) error {
+	_, err := db.Exec("INSERT INTO Users (username, password_hash) VALUES ($1, $2)", username, passwordHash)
+	return err
 }
 
-func GenerateToken(db *sql.DB, username string) string {
-	token := make([]byte, 64)
-	rand.Read(token)
-
-	_, err := db.Exec("INSERT INTO Tokens (user_id, token) VALUES ((SELECT id FROM Users WHERE login=$1), $2)",
-		username, token)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return base64.RawURLEncoding.EncodeToString(token)
+func CheckUserExists(db *sql.DB, username string) (bool, error) {
+	var result bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", username).Scan(&result)
+	return result, err
 }
 
-func CheckToken(db *sql.DB, encodedToken string) (string, error) {
-	token, err := base64.RawURLEncoding.DecodeString(encodedToken)
+func CheckSelectorExists(db *sql.DB, selector []byte) (bool, error) {
+	var result bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM tokens WHERE selector=$1)", selector).Scan(&result)
+	return result, err
+}
+
+func GetPasswordHash(db *sql.DB, username string) ([]byte, error) {
+	var result []byte
+	err := db.QueryRow("SELECT password_hash FROM users WHERE username=$1", username).Scan(&result)
+	return result, err
+}
+
+func GetUserID(db *sql.DB, username string) (int64, error) {
+	var result int64
+	err := db.QueryRow("SELECT id FROM users WHERE username=$1", username).Scan(&result)
+	return result, err
+}
+
+func AddToken(db *sql.DB, t DBToken) error {
+	_, err := db.Exec("INSERT INTO tokens (user_id, selector, token) VALUES ($1, $2, $3)", t.UserID, t.Selector, t.Token)
+	return err
+}
+
+func GetToken(db *sql.DB, selector []byte) (DBToken, error) {
+	var result DBToken
+	row := db.QueryRow("SELECT user_id, selector, token, expires FROM tokens WHERE selector=$1", selector)
+	err := row.Scan(&result.UserID, &result.Selector, &result.Token, &result.expires)
 	if err != nil {
-		return "", err
+		return result, err
 	}
 
-	var name string
-	err = db.QueryRow("SELECT login FROM Users WHERE Users.id=(SELECT user_id FROM Tokens WHERE token=$1)", token).Scan(&name)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", err
+	err = validateTokenExpiration(db, result)
+	return result, err
+}
+
+func validateTokenExpiration(db *sql.DB, t DBToken) error {
+	if time.Now().After(t.expires) {
+		_, err := db.Exec("DELETE FROM tokens WHERE selector=$1", t.Selector)
+		if err != nil {
+			return err
 		}
-		log.Fatal(err)
+		return errors.New("token expired")
 	}
-
-	return name, nil
+	return nil
 }
