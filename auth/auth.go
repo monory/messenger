@@ -21,6 +21,7 @@ var (
 	ErrUserExists       = errors.New("auth: user exists")
 	ErrUsernameNotFound = errors.New("auth: username not found")
 	ErrInvalidPassword  = errors.New("auth: invalid password")
+	ErrInvalidToken     = errors.New("auth: invalid token")
 )
 
 func Register(db *sql.DB, username, password string) error {
@@ -123,6 +124,9 @@ func generateDBToken(db *sql.DB, t UserToken, username string) (database.DBToken
 func CheckUserToken(db *sql.DB, t UserToken) (bool, error) {
 	dbToken, err := database.GetToken(db, t.Selector)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, ErrInvalidToken
+		}
 		return false, err
 	}
 
@@ -131,5 +135,5 @@ func CheckUserToken(db *sql.DB, t UserToken) (bool, error) {
 		return true, nil
 	}
 
-	return false, nil
+	return false, ErrInvalidToken
 }

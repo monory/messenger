@@ -60,14 +60,13 @@ func AddToken(db *sql.DB, t DBToken) error {
 
 func GetToken(db *sql.DB, selector []byte) (DBToken, error) {
 	var result DBToken
-	row := db.QueryRow("SELECT user_id, selector, token, expires FROM tokens WHERE selector=$1", selector)
+	row := db.QueryRow("SELECT user_id, selector, token, expires FROM tokens WHERE selector=$1 AND expires>NOW()", selector)
 	err := row.Scan(&result.UserID, &result.Selector, &result.Token, &result.expires)
 	if err != nil {
 		return result, err
 	}
 
-	err = validateTokenExpiration(db, result)
-	return result, err
+	return result, nil
 }
 
 func validateTokenExpiration(db *sql.DB, t DBToken) error {
