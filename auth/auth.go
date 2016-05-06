@@ -17,13 +17,19 @@ const (
 	validatorSize = 32
 )
 
+var (
+	ErrUserExists       = errors.New("auth: user exists")
+	ErrUsernameNotFound = errors.New("auth: username not found")
+	ErrInvalidPassword  = errors.New("auth: invalid password")
+)
+
 func Register(db *sql.DB, username, password string) error {
 	userExists, err := database.CheckUserExists(db, username)
 	if err != nil {
 		return err
 	}
 	if userExists {
-		return errors.New("user exists")
+		return ErrUserExists
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
@@ -48,12 +54,18 @@ func Login(db *sql.DB, username, password string) (UserToken, error) {
 	var t UserToken
 	dbPasswordHash, err := database.GetPasswordHash(db, username)
 	if err != nil {
-		return t, errors.New("invalid username")
+		if err == sql.ErrNoRows {
+			return t, ErrUsernameNotFound
+		}
+		return t, err
 	}
 
 	err = bcrypt.CompareHashAndPassword(dbPasswordHash, []byte(password))
 	if err != nil {
-		return t, errors.New("invalid password")
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return t, ErrInvalidPassword
+		}
+		return t, err
 	}
 
 	t, err = generateUserToken(db)
