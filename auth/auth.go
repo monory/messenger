@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
-	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -17,11 +16,19 @@ const (
 	validatorSize = 32
 )
 
+type AuthError struct {
+	e string
+}
+
+func (err AuthError) Error() string {
+	return err.e
+}
+
 var (
-	ErrUserExists       = errors.New("auth: user exists")
-	ErrUsernameNotFound = errors.New("auth: username not found")
-	ErrInvalidPassword  = errors.New("auth: invalid password")
-	ErrInvalidToken     = errors.New("auth: invalid token")
+	ErrUserExists       = AuthError{"auth: user exists"}
+	ErrUsernameNotFound = AuthError{"auth: username not found"}
+	ErrInvalidPassword  = AuthError{"auth: invalid password"}
+	ErrInvalidToken     = AuthError{"auth: invalid token"}
 )
 
 func Register(db *sql.DB, username, password string) error {
