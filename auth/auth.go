@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
+	"encoding/base64"
+	"math"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/monory/messager-backend/database"
+	"github.com/monory/messenger/database"
 )
 
 const (
@@ -56,6 +58,33 @@ func Register(db *sql.DB, username, password string) error {
 type UserToken struct {
 	Selector  []byte
 	Validator []byte
+}
+
+func (t UserToken) String() string {
+	return base64.URLEncoding.EncodeToString(t.Selector) + base64.URLEncoding.EncodeToString(t.Validator)
+}
+
+func DecodeToken(s string) (UserToken, error) {
+	var t UserToken
+	selectorEncoded := int(math.Ceil(float64(selectorSize)/3) * 4)
+	validatorEncoded := int(math.Ceil(float64(validatorSize)/3) * 4)
+
+	if len(s) != selectorEncoded+validatorEncoded {
+		return t, AuthError{"auth: invalid token size"}
+	}
+
+	var err error
+	t.Selector, err = base64.URLEncoding.DecodeString(s[:selectorEncoded])
+	if err != nil {
+		return t, err
+	}
+
+	t.Validator, err = base64.URLEncoding.DecodeString(s[selectorEncoded:])
+	if err != nil {
+		return t, err
+	}
+
+	return t, nil
 }
 
 func Login(db *sql.DB, username, password string) (UserToken, error) {

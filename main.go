@@ -4,25 +4,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/monory/messager-backend/chat"
-	"github.com/monory/messager-backend/database"
-	"github.com/monory/messager-backend/web"
+	"github.com/monory/messenger/chat"
+	"github.com/monory/messenger/site"
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
-	db := database.ConnectDatabase("user=messenger_user password=example_password dbname=messenger")
-	err := db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
+	site.Start()
+	chat.Start()
 
-	// websocket server
-	server := chat.NewServer("/entryhandler")
-	go server.Listen(db)
-
-	// login-register server
-	http.HandleFunc("/registerhandler", web.MakeHandler(web.Handler, db))
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Start success")
+	http.ListenAndServe(":8080", nil)
 }

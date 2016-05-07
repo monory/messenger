@@ -2,12 +2,9 @@ package chat
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/monory/messager-backend/database"
 
 	"golang.org/x/net/websocket"
 )
@@ -99,17 +96,19 @@ func (s *Server) Listen(db *sql.DB) {
 			log.Fatal(err)
 		}
 
-		name, err := database.CheckToken(db, encodedToken)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				log.Println("No such token")
-				return
-			} else if _, ok := err.(base64.CorruptInputError); ok {
-				log.Println("Invalid token")
-				return
-			}
-			log.Fatal(err)
-		}
+		// name, err := database.CheckToken(db, encodedToken)
+		// if err != nil {
+		// 	if err == sql.ErrNoRows {
+		// 		log.Println("No such token")
+		// 		return
+		// 	} else if _, ok := err.(base64.CorruptInputError); ok {
+		// 		log.Println("Invalid token")
+		// 		return
+		// 	}
+		// 	log.Fatal(err)
+		// }
+		// FIXME: использовать новый auth
+		name := "Чятик"
 
 		client := NewClient(ws, s, name)
 		s.Add(client)
