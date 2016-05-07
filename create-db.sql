@@ -2,14 +2,10 @@
 
 CREATE DATABASE messenger;
 \connect messenger;
-CREATE USER messenger_user WITH PASSWORD 'example_password';
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO messenger_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO messenger_user;
-
 
 CREATE TABLE Users (
     id              BIGSERIAL PRIMARY KEY,
-    login           VARCHAR(64) NOT NULL,
+    username        VARCHAR(64) UNIQUE NOT NULL,
     password_hash   BYTEA NOT NULL,
     shown_name      VARCHAR(256),
     online          BOOLEAN
@@ -23,7 +19,7 @@ CREATE TABLE Chats (
 CREATE TABLE Messages (
     id              BIGSERIAL PRIMARY KEY,
     time_stamp      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    message         VARCHAR(10000),
+    message         VARCHAR(10000) NOT NULL,
     author_id       BIGINT NOT NULL REFERENCES Users(id),
     chat_id         BIGINT NOT NULL REFERENCES Chats(id),
     seen            BOOLEAN DEFAULT FALSE
@@ -46,5 +42,17 @@ CREATE TABLE ChatContacts (
 CREATE TABLE Tokens (
     id              SERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES Users(id),
-    token           BYTEA
+    selector        BYTEA NOT NULL UNIQUE,
+    token           BYTEA NOT NULL,
+    expires         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 week'
 );
+
+CREATE INDEX ON Tokens USING HASH (selector);
+
+CREATE USER web_backend WITH PASSWORD 'web_backend_password';
+GRANT ALL ON TABLE users, tokens TO web_backend;
+GRANT ALL ON SEQUENCE users_id_seq, tokens_id_seq TO web_backend;
+
+CREATE USER chat_backend WITH PASSWORD 'chat_backend_password';
+GRANT ALL ON ALL TABLES IN SCHEMA public TO chat_backend;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO chat_backend;
