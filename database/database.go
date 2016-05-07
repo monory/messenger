@@ -2,8 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"errors"
-	"time"
 
 	_ "github.com/lib/pq" // to initialize postgres
 )
@@ -21,7 +19,6 @@ type DBToken struct {
 	UserID   int64
 	Selector []byte
 	Token    []byte
-	expires  time.Time
 }
 
 func AddUser(db *sql.DB, username string, passwordHash []byte) error {
@@ -60,8 +57,8 @@ func AddToken(db *sql.DB, t DBToken) error {
 
 func GetToken(db *sql.DB, selector []byte) (DBToken, error) {
 	var result DBToken
-	row := db.QueryRow("SELECT user_id, selector, token, expires FROM tokens WHERE selector=$1 AND expires>NOW()", selector)
-	err := row.Scan(&result.UserID, &result.Selector, &result.Token, &result.expires)
+	row := db.QueryRow("SELECT user_id, selector, token FROM tokens WHERE selector=$1 AND expires>NOW()", selector)
+	err := row.Scan(&result.UserID, &result.Selector, &result.Token)
 	if err != nil {
 		return result, err
 	}
@@ -69,13 +66,3 @@ func GetToken(db *sql.DB, selector []byte) (DBToken, error) {
 	return result, nil
 }
 
-func validateTokenExpiration(db *sql.DB, t DBToken) error {
-	if time.Now().After(t.expires) {
-		_, err := db.Exec("DELETE FROM tokens WHERE selector=$1", t.Selector)
-		if err != nil {
-			return err
-		}
-		return errors.New("token expired")
-	}
-	return nil
-}
