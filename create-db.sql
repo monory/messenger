@@ -47,7 +47,7 @@ CREATE TABLE Tokens (
     expires         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 week'
 );
 
-CREATE UNIQUE INDEX ON Tokens USING HASH (selector);
+CREATE INDEX ON Tokens USING HASH (selector);
 
 CREATE USER web_backend WITH PASSWORD 'web_backend_password';
 GRANT ALL ON TABLE users, tokens TO web_backend;
