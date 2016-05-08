@@ -26,6 +26,10 @@ func dbHandler(fn func(http.ResponseWriter, *http.Request, *sql.DB), db *sql.DB)
 }
 
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 	http.ServeFile(w, r, root+"/index.html")
 }
 
