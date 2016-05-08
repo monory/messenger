@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/monory/messenger/auth"
 	"github.com/monory/messenger/inputs/sanitize"
@@ -29,6 +30,10 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
+	if _, err := os.Stat(root + r.URL.Path); os.IsNotExist(err) {
+		notFoundError(w, err)
+		return
+	}
 	http.ServeFile(w, r, root+r.URL.Path)
 }
 
