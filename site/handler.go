@@ -30,7 +30,7 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := os.Stat(root + r.URL.Path); os.IsNotExist(err) {
+	if stat, err := os.Stat(root + r.URL.Path); os.IsNotExist(err) || stat.IsDir() {
 		notFoundError(w, err)
 		return
 	}
