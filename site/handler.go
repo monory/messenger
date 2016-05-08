@@ -48,71 +48,64 @@ func authHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	switch {
-	case r.PostFormValue("loginbutton") != "":
-		username := r.PostFormValue("username")
+	var username, password string
+
+	if len(r.PostForm) != 0 {
+		username = r.PostFormValue("username")
 		if !validate.Username(username) {
-			err = errors.New("Bad username")
-			break
-		}
-		username = sanitize.Username(username)
-
-		password := r.PostFormValue("password")
-		if !validate.Password(password) {
-			err = errors.New("Bad password")
-			break
-		}
-
-		var token auth.UserToken
-		token, err = auth.Login(db, username, password)
-		if err != nil {
-			if _, ok := err.(auth.AuthError); ok {
-				err = errors.New("Bad login")
-				break
-			} else {
-				internalServerError(w, err)
-				return
-			}
-		} else {
-			var c http.Cookie
-			c.Name = "token"
-			c.Value = token.String()
-			c.MaxAge = 86400 * 7 // a week
-			c.Secure = true
-			c.HttpOnly = true
-
-			http.SetCookie(w, &c)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			renderAuth(w, errors.New("Bad username"))
 			return
 		}
-	case r.PostFormValue("registerbutton") != "":
-		username := r.PostFormValue("username")
-		if !validate.Username(username) {
-			err = errors.New("Bad username")
-			break
-		}
 		username = sanitize.Username(username)
 
-		password := r.PostFormValue("password")
+		password = r.PostFormValue("password")
 		if !validate.Password(password) {
-			err = errors.New("Bad password")
-			break
-		}
-		err = auth.Register(db, username, password)
-		if err != nil {
-			if _, ok := err.(auth.AuthError); ok {
-				err = errors.New("Bad register")
-				break
-			} else {
-				internalServerError(w, err)
-				return
-			}
-		} else {
-			http.Redirect(w, r, "/auth", http.StatusSeeOther)
+			renderAuth(w, errors.New("Bad password"))
 			return
 		}
 	}
 
+	switch {
+	case r.PostFormValue("loginbutton") != "":
+		var token auth.UserToken
+		token, err = auth.Login(db, username, password)
+		if err != nil {
+			if _, ok := err.(auth.AuthError); ok {
+				renderAuth(w, errors.New("Bad login"))
+				return
+			}
+			internalServerError(w, err)
+			return
+		}
+
+		var c http.Cookie
+		c.Name = "token"
+		c.Value = token.String()
+		c.MaxAge = 86400 * 7 // a week
+		c.Secure = true
+		c.HttpOnly = true
+
+		http.SetCookie(w, &c)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	case r.PostFormValue("registerbutton") != "":
+		err = auth.Register(db, username, password)
+		if err != nil {
+			if _, ok := err.(auth.AuthError); ok {
+				renderAuth(w, errors.New("Bad register"))
+				return
+			}
+			internalServerError(w, err)
+			return
+		}
+		http.Redirect(w, r, "/auth", http.StatusSeeOther)
+		return
+	}
+
+	renderAuth(w, nil)
+}
+
+func renderAuth(w http.ResponseWriter, err error) {
 	data := struct {
 		Err error
 	}{
