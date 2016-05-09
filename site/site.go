@@ -7,7 +7,7 @@ import (
 )
 
 func Start() {
-	db := database.ConnectDatabase("user=web_backend password=web_backend_password dbname=messenger")
+	db := database.ConnectDatabase("user=web_backend dbname=messenger")
 	err := db.Ping()
 	if err != nil {
 		log.Print(err)
