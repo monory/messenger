@@ -4,19 +4,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/monory/messager-backend/chat"
-	"github.com/monory/messager-backend/web"
+	"github.com/monory/messenger/chat"
+	"github.com/monory/messenger/site"
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
+	site.Start()
+	chat.Start()
 
-	// websocket server
-	server := chat.NewServer("/entry")
-	go server.Listen()
-
-	// login-register server
-	http.HandleFunc("/register", web.Handler)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Start success")
+	http.ListenAndServe(":8080", nil)
 }

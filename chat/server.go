@@ -1,8 +1,12 @@
 package chat
 
 import (
+	"database/sql"
+	"io"
 	"log"
 	"net/http"
+
+	"github.com/monory/messenger/auth"
 
 	"golang.org/x/net/websocket"
 )
@@ -75,7 +79,7 @@ func (s *Server) sendAll(msg *Message) {
 
 // Listen and serve.
 // It serves client connection and broadcast request.
-func (s *Server) Listen() {
+func (s *Server) Listen(db *sql.DB) {
 
 	log.Println("Listening server...")
 
@@ -88,7 +92,26 @@ func (s *Server) Listen() {
 			}
 		}()
 
-		client := NewClient(ws, s)
+		var encodedToken string
+		err := websocket.Message.Receive(ws, &encodedToken)
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+
+		token := auth.NewUserToken()
+		err = token.FromString(encodedToken)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		name, err := auth.CheckChatToken(db, token)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		client := NewClient(ws, s, name)
 		s.Add(client)
 		client.Listen()
 	}
