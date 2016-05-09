@@ -63,42 +63,45 @@ func authHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 			renderAuth(w, errors.New("Bad password"))
 			return
 		}
-	}
 
-	switch {
-	case r.PostFormValue("loginbutton") != "":
-		var token auth.UserToken
-		token, err = auth.Login(db, username, password)
-		if err != nil {
-			if _, ok := err.(auth.AuthError); ok {
-				renderAuth(w, errors.New("Bad login"))
+		switch {
+		case r.PostFormValue("loginbutton") != "":
+			var token auth.UserToken
+			token, err = auth.Login(db, username, password)
+			if err != nil {
+				if _, ok := err.(auth.AuthError); ok {
+					renderAuth(w, errors.New("Bad login"))
+					return
+				}
+				internalServerError(w, err)
 				return
 			}
-			internalServerError(w, err)
+
+			var c http.Cookie
+			c.Name = "token"
+			c.Value = token.String()
+			c.MaxAge = 86400 * 7 // a week
+			c.Secure = true
+			c.HttpOnly = true
+
+			http.SetCookie(w, &c)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		case r.PostFormValue("registerbutton") != "":
+			err = auth.Register(db, username, password)
+			if err != nil {
+				if _, ok := err.(auth.AuthError); ok {
+					renderAuth(w, errors.New("Bad register"))
+					return
+				}
+				internalServerError(w, err)
+				return
+			}
+			http.Redirect(w, r, "/auth", http.StatusSeeOther)
 			return
 		}
 
-		var c http.Cookie
-		c.Name = "token"
-		c.Value = token.String()
-		c.MaxAge = 86400 * 7 // a week
-		c.Secure = true
-		c.HttpOnly = true
-
-		http.SetCookie(w, &c)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	case r.PostFormValue("registerbutton") != "":
-		err = auth.Register(db, username, password)
-		if err != nil {
-			if _, ok := err.(auth.AuthError); ok {
-				renderAuth(w, errors.New("Bad register"))
-				return
-			}
-			internalServerError(w, err)
-			return
-		}
-		http.Redirect(w, r, "/auth", http.StatusSeeOther)
+		renderAuth(w, errors.New("Bad request"))
 		return
 	}
 
