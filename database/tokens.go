@@ -14,7 +14,7 @@ func CheckSelectorExists(db *sql.DB, selector []byte) (bool, error) {
 	return result, err
 }
 
-func AddToken(db *sql.DB, t DBToken) error {
+func AddToken(db *sql.DB, t *DBToken) error {
 	_, err := db.Exec("INSERT INTO tokens (user_id, selector, token) VALUES ($1, $2, $3)", t.UserID, t.Selector, t.Token)
 	return err
 }

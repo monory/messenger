@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
@@ -38,8 +37,8 @@ func Register(db *sql.DB, username, password string) error {
 	return nil
 }
 
-func Login(db *sql.DB, username, password string) (UserToken, error) {
-	var t UserToken
+func Login(db *sql.DB, username, password string) (*UserToken, error) {
+	var t *UserToken
 	dbPasswordHash, err := database.GetPasswordHash(db, username)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -56,15 +55,21 @@ func Login(db *sql.DB, username, password string) (UserToken, error) {
 		return t, err
 	}
 
-	t, err = generateUserToken(db)
-	if err != nil {
-		return t, err
+	t = NewUserToken()
+	for selectorExists := true; selectorExists; {
+		t.Random()
+		selectorExists, err = database.CheckSelectorExists(db, t.Selector)
+		if err != nil {
+			return t, err
+		}
 	}
 
-	dbToken, err := generateDBToken(db, t, username)
+	dbToken := t.DBToken()
+	userID, err := database.GetUserID(db, username)
 	if err != nil {
 		return t, err
 	}
+	dbToken.UserID = userID
 
 	err = database.AddToken(db, dbToken)
 	if err != nil {
@@ -74,41 +79,7 @@ func Login(db *sql.DB, username, password string) (UserToken, error) {
 	return t, nil
 }
 
-func generateUserToken(db *sql.DB) (UserToken, error) {
-	var result UserToken
-
-	result.Selector = make([]byte, selectorSize)
-	for selectorExists := true; selectorExists; {
-		rand.Read(result.Selector)
-		var err error
-		selectorExists, err = database.CheckSelectorExists(db, result.Selector)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	result.Validator = make([]byte, validatorSize)
-	rand.Read(result.Validator)
-
-	return result, nil
-}
-
-func generateDBToken(db *sql.DB, t UserToken, username string) (database.DBToken, error) {
-	var result database.DBToken
-	var err error
-
-	result.UserID, err = database.GetUserID(db, username)
-	if err != nil {
-		return result, err
-	}
-
-	result.Selector = t.Selector
-	hash := sha256.Sum256(t.Validator)
-	result.Token = hash[:]
-	return result, nil
-}
-
-func CheckUserToken(db *sql.DB, t UserToken) error {
+func CheckUserToken(db *sql.DB, t *UserToken) error {
 	dbToken, err := database.GetToken(db, t.Selector)
 	if err != nil {
 		if err == sql.ErrNoRows {

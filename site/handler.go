@@ -36,7 +36,8 @@ func defaultHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	token, err := auth.DecodeToken(cookieToken.Value)
+	token := auth.NewUserToken()
+	err = token.FromString(cookieToken.Value)
 	if err == nil {
 		err = auth.CheckUserToken(db, token)
 	}
@@ -60,6 +61,11 @@ func defaultHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	chatHandler(w, r, db)
+}
+
+func chatHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	http.ServeFile(w, r, root+"/index.html")
 }
 
@@ -96,7 +102,7 @@ func authHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 		switch {
 		case r.PostFormValue("loginbutton") != "":
-			var token auth.UserToken
+			var token *auth.UserToken
 			token, err = auth.Login(db, username, password)
 			if err != nil {
 				if _, ok := err.(auth.AuthError); ok {
