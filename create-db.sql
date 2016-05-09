@@ -3,7 +3,7 @@
 CREATE DATABASE messenger;
 \connect messenger;
 
-CREATE TABLE Users (
+CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     username        VARCHAR(64) UNIQUE NOT NULL,
     password_hash   BYTEA NOT NULL,
@@ -11,37 +11,37 @@ CREATE TABLE Users (
     online          BOOLEAN
 );
 
-CREATE TABLE Chats (
+CREATE TABLE chats (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(256) NOT NULL
 );
 
-CREATE TABLE Messages (
+CREATE TABLE messages (
     id              BIGSERIAL PRIMARY KEY,
     time_stamp      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     message         VARCHAR(10000) NOT NULL,
-    author_id       BIGINT NOT NULL REFERENCES Users(id),
-    chat_id         BIGINT NOT NULL REFERENCES Chats(id),
+    author_id       BIGINT NOT NULL REFERENCES users(id),
+    chat_id         BIGINT NOT NULL REFERENCES chats(id),
     seen            BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE UserContacts (
+CREATE TABLE user_contacts (
     id              BIGSERIAL PRIMARY KEY,
-    owner_id        BIGINT NOT NULL REFERENCES Users(id),
-    user_id         BIGINT NOT NULL REFERENCES Users(id),
+    owner_id        BIGINT NOT NULL REFERENCES users(id),
+    user_id         BIGINT NOT NULL REFERENCES users(id),
     pseudonym       VARCHAR(256)
 );
 
-CREATE TABLE ChatContacts (
+CREATE TABLE chat_contacts (
 	id              BIGSERIAL PRIMARY KEY,
-	owner_id        BIGINT NOT NULL REFERENCES Users(id),
-	chat_id         BIGINT NOT NULL REFERENCES Chats(id),
+	owner_id        BIGINT NOT NULL REFERENCES users(id),
+	chat_id         BIGINT NOT NULL REFERENCES chats(id),
 	pseudonym       VARCHAR(256)
 );
 
-CREATE TABLE Tokens (
+CREATE TABLE tokens (
     id              SERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES Users(id),
+    user_id         BIGINT NOT NULL REFERENCES users(id),
     selector        BYTEA NOT NULL UNIQUE,
     token           BYTEA NOT NULL,
     expires         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 week'
@@ -55,7 +55,7 @@ CREATE TABLE chat_tokens (
     expires         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour'
 );
 
-CREATE INDEX ON Tokens USING HASH (selector);
+CREATE INDEX ON tokens USING HASH (selector);
 CREATE INDEX ON chat_tokens USING HASH (selector);
 
 CREATE USER web_backend WITH PASSWORD 'web_backend_password';
