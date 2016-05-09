@@ -70,18 +70,18 @@ func DecodeToken(s string) (UserToken, error) {
 	validatorEncoded := int(math.Ceil(float64(validatorSize)/3) * 4)
 
 	if len(s) != selectorEncoded+validatorEncoded {
-		return t, AuthError{"auth: invalid token size"}
+		return t, ErrInvalidToken
 	}
 
 	var err error
 	t.Selector, err = base64.URLEncoding.DecodeString(s[:selectorEncoded])
 	if err != nil {
-		return t, err
+		return t, ErrInvalidToken
 	}
 
 	t.Validator, err = base64.URLEncoding.DecodeString(s[selectorEncoded:])
 	if err != nil {
-		return t, err
+		return t, ErrInvalidToken
 	}
 
 	return t, nil
@@ -157,19 +157,19 @@ func generateDBToken(db *sql.DB, t UserToken, username string) (database.DBToken
 	return result, nil
 }
 
-func CheckUserToken(db *sql.DB, t UserToken) (bool, error) {
+func CheckUserToken(db *sql.DB, t UserToken) error {
 	dbToken, err := database.GetToken(db, t.Selector)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, ErrInvalidToken
+			return ErrInvalidToken
 		}
-		return false, err
+		return err
 	}
 
 	hash := sha256.Sum256(t.Validator)
 	if subtle.ConstantTimeCompare(hash[:], dbToken.Token) == 1 {
-		return true, nil
+		return nil
 	}
 
-	return false, ErrInvalidToken
+	return ErrInvalidToken
 }

@@ -14,7 +14,7 @@ import (
 var root = "html"
 
 func Listen(db *sql.DB) {
-	http.HandleFunc("/", defaultHandler)
+	http.HandleFunc("/", dbHandler(defaultHandler, db))
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/auth", dbHandler(authHandler, db))
 }
@@ -25,7 +25,37 @@ func dbHandler(fn func(http.ResponseWriter, *http.Request, *sql.DB), db *sql.DB)
 	}
 }
 
-func defaultHandler(w http.ResponseWriter, r *http.Request) {
+func defaultHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	cookieToken, err := r.Cookie("token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Redirect(w, r, "/auth", http.StatusSeeOther)
+			return
+		}
+		internalServerError(w, err)
+		return
+	}
+
+	token, err := auth.DecodeToken(cookieToken.Value)
+	if err == nil {
+		err = auth.CheckUserToken(db, token)
+	}
+	if err != nil {
+		if _, ok := err.(auth.AuthError); ok {
+			var c http.Cookie
+			c.Name = "token"
+			c.MaxAge = -1
+			c.Secure = true
+			c.HttpOnly = true
+
+			http.SetCookie(w, &c)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		internalServerError(w, err)
+		return
+	}
+
 	if r.URL.Path != "/" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
