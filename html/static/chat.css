@@ -14,12 +14,28 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
+}
 
-    background-color: lightblue;
+.welcome-message {
+    padding: 20px;
+    flex: 0 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 1.5rem;
+}
+
+.header-spacer {
+    flex: 1 0 0px;
 }
 
 .header-button {
-    flex: 0 1 100px;
+    padding: 20px;
+    flex: 0 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .header-button:hover {
@@ -64,8 +80,7 @@ body {
 
 .message {
     padding: 10px;
-
-    font-size: 18px;
+    font-size: 1.2rem;
 }
 
 .message:nth-child(even) {
@@ -76,24 +91,10 @@ body {
     background-color: #EEE;
 }
 
-.message {
-}
-
 .chat-footer {
     flex: 0 0 72px;
 
     display: flex;
-
-    //background-color: lime;
-}
-
-#chat-form {
-    flex: 1 1 0px;
-    display: flex;
-}
-
-#chat-form > * {
-    margin: 5px;
 }
 
 .message-text {

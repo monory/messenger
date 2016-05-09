@@ -37,15 +37,18 @@ function getCookie(name) {
     return (value != null) ? unescape(value[1]) : 0;
 }
 
-function SendToken(socket) {
+function OpenConnection(socket) {
     socket.send(getCookie("chat_token"));
+
+    $(".message-text").prop("disabled", false);
+    $(".message-button").prop("disabled", false);
 }
 
 $(function() {
     var socket = new WebSocket("wss://chat.monory.org/ws");
 
     socket.onopen = function() {
-        SendToken(socket);
+        OpenConnection(socket);
     };
     socket.onmessage = ReceiveMessage;
     socket.onclose = CloseConnection;
