@@ -5,8 +5,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
-	"encoding/base64"
-	"math"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -16,21 +14,6 @@ import (
 const (
 	selectorSize  = 16
 	validatorSize = 32
-)
-
-type AuthError struct {
-	e string
-}
-
-func (err AuthError) Error() string {
-	return err.e
-}
-
-var (
-	ErrUserExists       = AuthError{"auth: user exists"}
-	ErrUsernameNotFound = AuthError{"auth: username not found"}
-	ErrInvalidPassword  = AuthError{"auth: invalid password"}
-	ErrInvalidToken     = AuthError{"auth: invalid token"}
 )
 
 func Register(db *sql.DB, username, password string) error {
@@ -53,38 +36,6 @@ func Register(db *sql.DB, username, password string) error {
 	}
 
 	return nil
-}
-
-type UserToken struct {
-	Selector  []byte
-	Validator []byte
-}
-
-func (t UserToken) String() string {
-	return base64.URLEncoding.EncodeToString(t.Selector) + base64.URLEncoding.EncodeToString(t.Validator)
-}
-
-func DecodeToken(s string) (UserToken, error) {
-	var t UserToken
-	selectorEncoded := int(math.Ceil(float64(selectorSize)/3) * 4)
-	validatorEncoded := int(math.Ceil(float64(validatorSize)/3) * 4)
-
-	if len(s) != selectorEncoded+validatorEncoded {
-		return t, ErrInvalidToken
-	}
-
-	var err error
-	t.Selector, err = base64.URLEncoding.DecodeString(s[:selectorEncoded])
-	if err != nil {
-		return t, ErrInvalidToken
-	}
-
-	t.Validator, err = base64.URLEncoding.DecodeString(s[selectorEncoded:])
-	if err != nil {
-		return t, ErrInvalidToken
-	}
-
-	return t, nil
 }
 
 func Login(db *sql.DB, username, password string) (UserToken, error) {
