@@ -95,3 +95,48 @@ func CheckUserToken(db *sql.DB, t *UserToken) error {
 
 	return ErrInvalidToken
 }
+
+func MakeChatToken(db *sql.DB, t *UserToken) (*UserToken, error) {
+	result := NewUserToken()
+	for selectorExists := true; selectorExists; {
+		result.Random()
+		var err error
+		selectorExists, err = database.CheckChatSelectorExists(db, result.Selector)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	dbToken, err := database.GetToken(db, t.Selector)
+	if err != nil {
+		return result, err
+	}
+
+	chatDBToken := result.DBToken()
+	chatDBToken.UserID = dbToken.UserID
+	err = database.AddChatToken(db, chatDBToken)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+func CheckChatToken(db *sql.DB, t *UserToken) (string, error) {
+	result := ""
+
+	dbToken, err := database.GetChatToken(db, t.Selector)
+	if err != nil {
+		return result, err
+	}
+	err = database.UseChatToken(db, t.Selector)
+	if err != nil {
+		return result, err
+	}
+	result, err = database.GetUsername(db, dbToken.UserID)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}

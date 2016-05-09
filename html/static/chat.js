@@ -38,7 +38,7 @@ function getCookie(name) {
 }
 
 function SendToken(socket) {
-    socket.send(getCookie("token"));
+    socket.send(getCookie("chat_token"));
 }
 
 $(function() {

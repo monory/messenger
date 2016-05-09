@@ -66,6 +66,22 @@ func defaultHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func chatHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	cookieToken, _ := r.Cookie("token")
+	token := auth.NewUserToken()
+	token.FromString(cookieToken.Value)
+
+	chatToken, err := auth.MakeChatToken(db, token)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	var c http.Cookie
+	c.Name = "chat_token"
+	c.Value = chatToken.String()
+	c.Secure = true
+	http.SetCookie(w, &c)
+
 	http.ServeFile(w, r, root+"/index.html")
 }
 

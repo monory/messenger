@@ -24,3 +24,9 @@ func GetUserID(db *sql.DB, username string) (int64, error) {
 	err := db.QueryRow("SELECT id FROM users WHERE username=$1", username).Scan(&result)
 	return result, err
 }
+
+func GetUsername(db *sql.DB, userID int64) (string, error) {
+	var result string
+	err := db.QueryRow("SELECT username FROM users WHERE id=$1", userID).Scan(&result)
+	return result, err
+}
