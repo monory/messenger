@@ -9,6 +9,7 @@ body {
     flex-direction: column;
 }
 
+
 .header {
     flex: 0 0 60px;
     display: flex;
@@ -42,17 +43,56 @@ body {
     background-color: skyblue;
 }
 
-.contacts {
-    flex: 1 1 200px;
 
-    background-color: lightgreen;
-}
 
 .content {
+    border-top: 1px solid #DDD;
+
     display: flex;
     flex: 1 0 0px;
     flex-direction: row;
 }
+
+.contacts {
+    border-right: 1px solid #DDD;
+
+    flex: 1 1 200px;
+
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.contact {
+    box-sizing: border-box;
+    border-bottom: 1px solid #DDD;
+    flex: 0 0 70px;
+
+    padding: 10px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.contact:hover {
+    background-color: #EEE;
+}
+
+.contact-element {
+    flex: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-name {
+    font-weight: bold;
+}
+
+.contact-message {
+    color: #555;
+}
+
 
 .chat {
     flex: 5 1 300px;
@@ -63,8 +103,7 @@ body {
 
 .chat-header {
     flex: 0 0 36px;
-
-    background-color: pink;
+    border-bottom: 1px solid #DDD;
 }
 
 .chat-messages {
@@ -90,6 +129,7 @@ body {
 .message:nth-child(odd) {
     background-color: #EEE;
 }
+
 
 .chat-footer {
     flex: 0 0 72px;
