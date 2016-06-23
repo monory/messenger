@@ -22,6 +22,13 @@ type Client struct {
 
 	ch     chan *GeneralMessage
 	doneCh chan bool
+
+	activeChat string
+}
+
+type ClientCommand struct {
+	Client  *Client
+	Command *Command
 }
 
 // Create new chat client
@@ -39,7 +46,7 @@ func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
 	ch := make(chan *GeneralMessage, channelBufSize)
 	doneCh := make(chan bool)
 
-	return &Client{maxID, name, ws, server, ch, doneCh}
+	return &Client{maxID, name, ws, server, ch, doneCh, ""}
 }
 
 func (c *Client) Conn() *websocket.Conn {
@@ -74,8 +81,8 @@ func (c *Client) listenWrite() {
 
 		// send message to the client
 		case msg := <-c.ch:
-			log.Println("Send:", msg)
-			websocket.JSON.Send(c.ws, msg)
+			log.Println("Send:", *msg)
+			websocket.JSON.Send(c.ws, *msg)
 
 		// receive done request
 		case <-c.doneCh:
@@ -107,9 +114,14 @@ func (c *Client) listenRead() {
 			} else if err != nil {
 				c.server.Err(err)
 			} else {
-				log.Print(msg)
-				msg.Author = c.name
-				c.server.SendAll(&msg)
+				if msg.Cmd != nil {
+					log.Print("A command! ", *msg.Cmd)
+					c.server.HandleCommand(&ClientCommand{c, msg.Cmd})
+				} else {
+					log.Print(msg)
+					msg.Author = &c.name
+					c.server.SendAll(&msg)
+				}
 			}
 		}
 	}

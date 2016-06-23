@@ -9,8 +9,11 @@ function SendMessage(socket) {
         return;
     }
 
-    var message = {"message": data};
-    // console.log(JSON.stringify(message))
+    if ($(".contact-selected").text() == "") {
+        return;
+    }
+
+    var message = {"message": data, "chat": $(".contact-selected").text()};
     socket.send(JSON.stringify(message));
 }
 

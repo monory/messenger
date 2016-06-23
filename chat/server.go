@@ -15,11 +15,12 @@ import (
 // Chat server.
 type Server struct {
 	pattern   string
-	messages  []*GeneralMessage
+	messages  map[string][]*GeneralMessage
 	clients   map[int]*Client
 	addCh     chan *Client
 	delCh     chan *Client
 	sendAllCh chan *GeneralMessage
+	cmdCh     chan *ClientCommand
 	doneCh    chan bool
 	errCh     chan error
 	db        *sql.DB
@@ -27,11 +28,12 @@ type Server struct {
 
 // Create new chat server.
 func NewServer(pattern string) *Server {
-	messages := []*GeneralMessage{}
+	messages := make(map[string][]*GeneralMessage)
 	clients := make(map[int]*Client)
 	addCh := make(chan *Client)
 	delCh := make(chan *Client)
 	sendAllCh := make(chan *GeneralMessage)
+	cmdCh := make(chan *ClientCommand)
 	doneCh := make(chan bool)
 	errCh := make(chan error)
 
@@ -42,6 +44,7 @@ func NewServer(pattern string) *Server {
 		addCh,
 		delCh,
 		sendAllCh,
+		cmdCh,
 		doneCh,
 		errCh,
 		nil,
@@ -60,6 +63,10 @@ func (s *Server) SendAll(msg *GeneralMessage) {
 	s.sendAllCh <- msg
 }
 
+func (s *Server) HandleCommand(cmd *ClientCommand) {
+	s.cmdCh <- cmd
+}
+
 func (s *Server) Done() {
 	s.doneCh <- true
 }
@@ -68,22 +75,36 @@ func (s *Server) Err(err error) {
 	s.errCh <- err
 }
 
-func (s *Server) sendPastMessages(c *Client) {
-	for _, msg := range s.messages {
+func (s *Server) sendPastMessages(c *Client, name string) {
+	for _, msg := range s.messages[name] {
 		c.Write(msg)
 	}
 }
 
 func (s *Server) sendChats(c *Client) {
 	var msg GeneralMessage
-	msg.Chats = database.GetChats(s.db)
+	ch := ChatList(database.GetChats(s.db))
+	msg.Chats = &ch
+
+	log.Println("!!!!!", msg)
 
 	c.Write(&msg)
 }
 
 func (s *Server) sendAll(msg *GeneralMessage) {
 	for _, c := range s.clients {
-		c.Write(msg)
+		if *msg.Chat == c.activeChat {
+			c.Write(msg)
+		}
+	}
+}
+
+func (s *Server) handleCommand(cmd *ClientCommand) {
+	switch cmd.Command.Command {
+	case "chat-select":
+		log.Println(cmd.Client.name, "selected chat", cmd.Command.Arg)
+		cmd.Client.activeChat = cmd.Command.Arg
+		s.sendPastMessages(cmd.Client, cmd.Command.Arg)
 	}
 }
 
@@ -137,7 +158,7 @@ func (s *Server) Listen(db *sql.DB) {
 			log.Println("Added new client")
 			s.clients[c.id] = c
 			log.Println("Now", len(s.clients), "clients connected.")
-			s.sendPastMessages(c)
+			// s.sendPastMessages(c)
 			s.sendChats(c)
 
 		// del a client
@@ -148,8 +169,12 @@ func (s *Server) Listen(db *sql.DB) {
 		// broadcast message for all clients
 		case msg := <-s.sendAllCh:
 			log.Println("Send all:", msg)
-			s.messages = append(s.messages, msg)
+			s.messages[*msg.Chat] = append(s.messages[*msg.Chat], msg)
 			s.sendAll(msg)
+
+		case cmd := <-s.cmdCh:
+			log.Println("Command:", *cmd)
+			s.handleCommand(cmd)
 
 		case err := <-s.errCh:
 			log.Println("Error:", err.Error())

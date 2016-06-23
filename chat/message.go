@@ -10,12 +10,13 @@ type Command struct {
 }
 
 type GeneralMessage struct {
-	Author  string      `json:"author,omitempty"`
-	Message TextMessage `json:"message,omitempty"`
-	Chats   ChatList    `json:"chats,omitempty"`
-	Cmd     Command     `json:"command,omitempty"`
+	Author  *string      `json:"author,omitempty"`
+	Chat    *string      `json:"chat,omitempty"`
+	Message *TextMessage `json:"message,omitempty"`
+	Chats   *ChatList    `json:"chats,omitempty"`
+	Cmd     *Command     `json:"command,omitempty"`
 }
 
 func (self *GeneralMessage) String() string {
-	return self.Author + " says " + string(self.Message)
+	return *self.Author + " says " + string(*self.Message)
 }
