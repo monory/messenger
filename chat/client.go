@@ -20,7 +20,7 @@ type Client struct {
 	ws     *websocket.Conn
 	server *Server
 
-	ch     chan *Message
+	ch     chan *GeneralMessage
 	doneCh chan bool
 }
 
@@ -36,7 +36,7 @@ func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
 	}
 
 	maxID++
-	ch := make(chan *Message, channelBufSize)
+	ch := make(chan *GeneralMessage, channelBufSize)
 	doneCh := make(chan bool)
 
 	return &Client{maxID, name, ws, server, ch, doneCh}
@@ -46,7 +46,7 @@ func (c *Client) Conn() *websocket.Conn {
 	return c.ws
 }
 
-func (c *Client) Write(msg *Message) {
+func (c *Client) Write(msg *GeneralMessage) {
 	select {
 	case c.ch <- msg:
 	default:
@@ -100,7 +100,7 @@ func (c *Client) listenRead() {
 
 		// read data from websocket connection
 		default:
-			var msg Message
+			var msg GeneralMessage
 			err := websocket.JSON.Receive(c.ws, &msg)
 			if err == io.EOF {
 				c.doneCh <- true

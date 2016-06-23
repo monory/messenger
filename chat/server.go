@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/monory/messenger/auth"
+	"github.com/monory/messenger/database"
 
 	"golang.org/x/net/websocket"
 )
@@ -14,22 +15,23 @@ import (
 // Chat server.
 type Server struct {
 	pattern   string
-	messages  []*Message
+	messages  []*GeneralMessage
 	clients   map[int]*Client
 	addCh     chan *Client
 	delCh     chan *Client
-	sendAllCh chan *Message
+	sendAllCh chan *GeneralMessage
 	doneCh    chan bool
 	errCh     chan error
+	db        *sql.DB
 }
 
 // Create new chat server.
 func NewServer(pattern string) *Server {
-	messages := []*Message{}
+	messages := []*GeneralMessage{}
 	clients := make(map[int]*Client)
 	addCh := make(chan *Client)
 	delCh := make(chan *Client)
-	sendAllCh := make(chan *Message)
+	sendAllCh := make(chan *GeneralMessage)
 	doneCh := make(chan bool)
 	errCh := make(chan error)
 
@@ -42,6 +44,7 @@ func NewServer(pattern string) *Server {
 		sendAllCh,
 		doneCh,
 		errCh,
+		nil,
 	}
 }
 
@@ -53,7 +56,7 @@ func (s *Server) Del(c *Client) {
 	s.delCh <- c
 }
 
-func (s *Server) SendAll(msg *Message) {
+func (s *Server) SendAll(msg *GeneralMessage) {
 	s.sendAllCh <- msg
 }
 
@@ -71,7 +74,14 @@ func (s *Server) sendPastMessages(c *Client) {
 	}
 }
 
-func (s *Server) sendAll(msg *Message) {
+func (s *Server) sendChats(c *Client) {
+	var msg GeneralMessage
+	msg.Chats = database.GetChats(s.db)
+
+	c.Write(&msg)
+}
+
+func (s *Server) sendAll(msg *GeneralMessage) {
 	for _, c := range s.clients {
 		c.Write(msg)
 	}
@@ -82,6 +92,7 @@ func (s *Server) sendAll(msg *Message) {
 func (s *Server) Listen(db *sql.DB) {
 
 	log.Println("Listening server...")
+	s.db = db
 
 	// websocket handler
 	onConnected := func(ws *websocket.Conn) {
@@ -127,6 +138,7 @@ func (s *Server) Listen(db *sql.DB) {
 			s.clients[c.id] = c
 			log.Println("Now", len(s.clients), "clients connected.")
 			s.sendPastMessages(c)
+			s.sendChats(c)
 
 		// del a client
 		case c := <-s.delCh:

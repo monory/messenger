@@ -1,10 +1,15 @@
 package chat
 
-type Message struct {
-	Author string `json:"author"`
-	Body   string `json:"message"`
+type TextMessage string
+
+type ChatList []string
+
+type GeneralMessage struct {
+	Author  string      `json:"author,omitempty"`
+	Message TextMessage `json:"message,omitempty"`
+	Chats   ChatList    `json:"chats,omitempty"`
 }
 
-func (self *Message) String() string {
-	return self.Author + " says " + self.Body
+func (self *GeneralMessage) String() string {
+	return self.Author + " says " + string(self.Message)
 }
