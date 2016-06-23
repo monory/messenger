@@ -58,7 +58,12 @@ function SelectChat(event) {
     selectedChat.siblings().removeClass("contact-selected")
     selectedChat.addClass('contact-selected')
 
+    $(".header-message").text(event.data.find(".contact-element").text())
+
     $("#chat-messages").empty()
+
+    $(".message-text").prop("disabled", false);
+    $(".message-button").prop("disabled", false);
     // console.log(event.data.find(".contact-element").text(), "!!!!!")
 }
 
@@ -78,8 +83,8 @@ function getCookie(name) {
 function OpenConnection(socket) {
     socket.send(getCookie("chat_token"));
 
-    $(".message-text").prop("disabled", false);
-    $(".message-button").prop("disabled", false);
+    // $(".message-text").prop("disabled", false);
+    // $(".message-button").prop("disabled", false);
 }
 
 $(function() {
