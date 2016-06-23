@@ -6,14 +6,7 @@ CREATE DATABASE messenger;
 CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     username        VARCHAR(64) UNIQUE NOT NULL,
-    password_hash   BYTEA NOT NULL,
-    shown_name      VARCHAR(256),
-    online          BOOLEAN
-);
-
-CREATE TABLE chats (
-    id              BIGSERIAL PRIMARY KEY,
-    name            VARCHAR(256) NOT NULL
+    password_hash   BYTEA NOT NULL
 );
 
 CREATE TABLE messages (
@@ -21,22 +14,14 @@ CREATE TABLE messages (
     time_stamp      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     message         VARCHAR(10000) NOT NULL,
     author_id       BIGINT NOT NULL REFERENCES users(id),
-    chat_id         BIGINT NOT NULL REFERENCES chats(id),
+    receiver_id     BIGINT NOT NULL REFERENCES users(id),
     seen            BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE user_contacts (
+CREATE TABLE contacts (
     id              BIGSERIAL PRIMARY KEY,
     owner_id        BIGINT NOT NULL REFERENCES users(id),
-    user_id         BIGINT NOT NULL REFERENCES users(id),
-    pseudonym       VARCHAR(256)
-);
-
-CREATE TABLE chat_contacts (
-	id              BIGSERIAL PRIMARY KEY,
-	owner_id        BIGINT NOT NULL REFERENCES users(id),
-	chat_id         BIGINT NOT NULL REFERENCES chats(id),
-	pseudonym       VARCHAR(256)
+    user_id         BIGINT NOT NULL REFERENCES users(id)
 );
 
 CREATE TABLE tokens (

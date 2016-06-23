@@ -13,17 +13,17 @@ function SendMessage(socket) {
         return;
     }
 
-    var message = {"message": data, "chat": $(".contact-selected").text()};
+    var message = {"text": {"message": data, "receiver": $(".contact-selected").text()}};
+    console.log("SENDING", JSON.stringify(message))
     socket.send(JSON.stringify(message));
 }
 
 function ReceiveMessage(event) {
     var message = $.parseJSON(event.data);
+    console.log(event.data)
 
-    if (message.message != null) {
-        HandleMessage(message);
-    } else if (message.chats != null) {
-        HandleChatList(message);
+    if (message.text != null) {
+        HandleMessage(message.text);
     } else if (message.command != null) {
         HandleCommand(message);
     }
@@ -38,32 +38,35 @@ function HandleMessage(message) {
     $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
 }
 
-function HandleChatList(message) {
-    $(".contacts").empty()
-
-    for (var chat in message.chats) {
-        console.log(message.chats[chat], "!")
-
-        var chatString = $("<div class=\"contact\"></div>");
-        chatString.append($("<div class=\"contact-element contact-name\"></div>").text(message.chats[chat]));
-        // chatString.append($("<div class=\"contact-element contact-message\"></div>").text("Sample text?"));
-        $(".contacts").append(chatString);
-
-        chatString.click(chatString, SelectChat);
-    }
-}
-
 function HandleCommand(message) {
-    switch (message.command.command) {
+    switch (message.command.name) {
+        case "send-contacts":
+            $(".contacts").empty()
+            for (var chat in message.command.args) {
+                var chatString = $("<div class=\"contact\"></div>");
+                chatString.append($("<div class=\"contact-element contact-name\"></div>").text(message.command.args[chat]));
+                $(".contacts").append(chatString);
+
+                chatString.click(chatString, SelectChat);
+            }
+            break;
+        case "send-messages":
+            for (var v in message.command.args) {
+                HandleMessage(message.command.args[v]);
+            }
+            break;
         case "error":
-            alert(message.command.argument)
+            alert(message.command.args)
+            break;
+        default:
+            console.log(message);
             break;
     }
 }
 
 function SelectChat(event) {
 
-    socket.send(JSON.stringify({"command": {"command": "chat-select", "argument": event.data.find(".contact-element").text()}}))
+    socket.send(JSON.stringify({"command": {"name": "chat-select", "args": event.data.find(".contact-element").text()}}))
 
     // change style
     selectedChat = event.data;
@@ -103,7 +106,7 @@ function NewChat() {
     var name = prompt("Enter chat name:")
 
     if (name != null && name != "") {
-        socket.send(JSON.stringify({"command": {"command": "new-chat", "argument": name}}))
+        // socket.send(JSON.stringify({"command": {"command": "new-chat", "argument": name}}))
     }
 }
 

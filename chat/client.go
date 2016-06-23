@@ -5,22 +5,21 @@ import (
 	"io"
 	"log"
 
+	"github.com/monory/messenger/database"
+
 	"golang.org/x/net/websocket"
 )
 
 const channelBufSize = 100
 
-var maxID int
-
-// Chat client
 type Client struct {
-	id   int
+	id   int64
 	name string
 
 	ws     *websocket.Conn
 	server *Server
 
-	ch     chan *GeneralMessage
+	ch     chan *database.Message
 	doneCh chan bool
 
 	activeChat string
@@ -28,12 +27,15 @@ type Client struct {
 
 type ClientCommand struct {
 	Client  *Client
-	Command *Command
+	Command *database.Command
 }
 
-// Create new chat client
-func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
+type ClientMessage struct {
+	Client  *Client
+	Message *database.TextMessage
+}
 
+func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
 	if ws == nil {
 		panic("ws cannot be nil")
 	}
@@ -42,18 +44,23 @@ func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
 		panic("server cannot be nil")
 	}
 
-	maxID++
-	ch := make(chan *GeneralMessage, channelBufSize)
+	id, err := database.GetUserID(server.db, name)
+	if err != nil {
+		log.Println("Error:", err)
+		return nil
+	}
+
+	ch := make(chan *database.Message, channelBufSize)
 	doneCh := make(chan bool)
 
-	return &Client{maxID, name, ws, server, ch, doneCh, ""}
+	return &Client{id, name, ws, server, ch, doneCh, ""}
 }
 
 func (c *Client) Conn() *websocket.Conn {
 	return c.ws
 }
 
-func (c *Client) Write(msg *GeneralMessage) {
+func (c *Client) Write(msg *database.Message) {
 	select {
 	case c.ch <- msg:
 	default:
@@ -63,25 +70,15 @@ func (c *Client) Write(msg *GeneralMessage) {
 	}
 }
 
-func (c *Client) Error(err string) {
-	var sent GeneralMessage
-	sent.Cmd = &Command{"error", err}
-
-	log.Println("ERROR:", err)
-	c.Write(&sent)
-}
-
 func (c *Client) Done() {
 	c.doneCh <- true
 }
 
-// Listen Write and Read request via channel
 func (c *Client) Listen() {
 	go c.listenWrite()
 	c.listenRead()
 }
 
-// Listen write request via channel
 func (c *Client) listenWrite() {
 	log.Println("Listening write to client")
 	for {
@@ -101,7 +98,6 @@ func (c *Client) listenWrite() {
 	}
 }
 
-// Listen read request via channel
 func (c *Client) listenRead() {
 	log.Println("Listening read from client")
 	for {
@@ -115,7 +111,7 @@ func (c *Client) listenRead() {
 
 		// read data from websocket connection
 		default:
-			var msg GeneralMessage
+			var msg database.Message
 			err := websocket.JSON.Receive(c.ws, &msg)
 			if err == io.EOF {
 				c.doneCh <- true
@@ -123,12 +119,14 @@ func (c *Client) listenRead() {
 				c.server.Err(err)
 			} else {
 				if msg.Cmd != nil {
-					log.Print("A command! ", *msg.Cmd)
+					// log.Print("A command!", *msg.Cmd)
+					log.Print("A command!")
 					c.server.HandleCommand(&ClientCommand{c, msg.Cmd})
 				} else {
-					log.Print(msg)
-					msg.Author = &c.name
-					c.server.SendAll(&msg)
+					// log.Print("A message!", *msg.Txt)
+					log.Print("A message!")
+					msg.Txt.Author = c.name
+					c.server.HandleMessage(&ClientMessage{c, msg.Txt})
 				}
 			}
 		}
