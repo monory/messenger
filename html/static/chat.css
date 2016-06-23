@@ -78,6 +78,15 @@ body {
     background-color: #EEE;
 }
 
+.contact-selected {
+    background-color: #117;
+    color: white;
+}
+
+.contact-selected:hover {
+    background-color: #228;
+}
+
 .contact-element {
     flex: auto;
     white-space: nowrap;

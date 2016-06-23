@@ -39,11 +39,25 @@ function HandleChatList(message) {
 
         var chatString = $("<div class=\"contact\"></div>");
         chatString.append($("<div class=\"contact-element contact-name\"></div>").text(message.chats[chat]));
-        chatString.append($("<div class=\"contact-element contact-message\"></div>").text("Sample text?"));
+        // chatString.append($("<div class=\"contact-element contact-message\"></div>").text("Sample text?"));
         $(".contacts").append(chatString);
+
+        chatString.click(chatString, SelectChat);
     }
 }
 
+function SelectChat(event) {
+
+    socket.send(JSON.stringify({"command": {"command": "chat-select", "argument": event.data.find(".contact-element").text()}}))
+
+    // change style
+    selectedChat = event.data;
+    selectedChat.siblings().removeClass("contact-selected")
+    selectedChat.addClass('contact-selected')
+
+    $("#chat-messages").empty()
+    // console.log(event.data.find(".contact-element").text(), "!!!!!")
+}
 
 function CloseConnection() {
     $(".message-text").prop("disabled", true);
@@ -66,7 +80,7 @@ function OpenConnection(socket) {
 }
 
 $(function() {
-    var socket = new WebSocket("wss://chat.monory.org/ws");
+    socket = new WebSocket("wss://chat.monory.org/ws");
 
     socket.onopen = function() {
         OpenConnection(socket);

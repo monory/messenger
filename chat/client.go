@@ -107,6 +107,7 @@ func (c *Client) listenRead() {
 			} else if err != nil {
 				c.server.Err(err)
 			} else {
+				log.Print(msg)
 				msg.Author = c.name
 				c.server.SendAll(&msg)
 			}
