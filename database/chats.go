@@ -67,3 +67,8 @@ func AddMessage(db *sql.DB, msg *TextMessage) {
 		log.Println(err)
 	}
 }
+
+func AddContact(db *sql.DB, id int64, contact string) error {
+	_, err := db.Exec("INSERT INTO contacts (owner_id, user_id) VALUES ($1, (SELECT id FROM users WHERE username=$2))", id, contact)
+	return err
+}

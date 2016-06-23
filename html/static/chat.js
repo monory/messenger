@@ -110,7 +110,7 @@ function NewChat() {
     var name = prompt("Enter chat name:");
 
     if (name != null && name != "") {
-        // socket.send(JSON.stringify({"command": {"command": "new-chat", "argument": name}}))
+        socket.send(JSON.stringify({"command": {"name": "new-chat", "args": name}}))
     }
 }
 

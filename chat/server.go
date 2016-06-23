@@ -107,6 +107,13 @@ func (s *Server) handleCommand(cmd *ClientCommand) {
 	case "chat-select":
 		cmd.Client.activeChat, _ = cmd.Command.Args.(string)
 		s.sendPastMessages(cmd.Client, cmd.Client.activeChat)
+	case "new-chat":
+		err := database.AddContact(s.db, cmd.Client.id, cmd.Command.Args.(string))
+		if err != nil {
+			log.Println("ERROR:", err)
+			return
+		}
+		s.sendContacts(cmd.Client)
 	}
 }
 
