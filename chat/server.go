@@ -95,8 +95,10 @@ func (s *Server) handleMessage(msg *ClientMessage) {
 		msg.Client.Write(&database.Message{Txt: msg.Message, Cmd: nil})
 	}
 
-	if s.clients[msg.Message.Receiver].activeChat == msg.Message.Author {
-		s.clients[msg.Message.Receiver].Write(&database.Message{Txt: msg.Message, Cmd: nil})
+	if _, ok := s.clients[msg.Message.Receiver]; ok {
+		if s.clients[msg.Message.Receiver].activeChat == msg.Message.Author {
+			s.clients[msg.Message.Receiver].Write(&database.Message{Txt: msg.Message, Cmd: nil})
+		}
 	}
 }
 
