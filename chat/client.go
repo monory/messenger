@@ -20,8 +20,15 @@ type Client struct {
 	ws     *websocket.Conn
 	server *Server
 
-	ch     chan *Message
+	ch     chan *GeneralMessage
 	doneCh chan bool
+
+	activeChat string
+}
+
+type ClientCommand struct {
+	Client  *Client
+	Command *Command
 }
 
 // Create new chat client
@@ -36,17 +43,17 @@ func NewClient(ws *websocket.Conn, server *Server, name string) *Client {
 	}
 
 	maxID++
-	ch := make(chan *Message, channelBufSize)
+	ch := make(chan *GeneralMessage, channelBufSize)
 	doneCh := make(chan bool)
 
-	return &Client{maxID, name, ws, server, ch, doneCh}
+	return &Client{maxID, name, ws, server, ch, doneCh, ""}
 }
 
 func (c *Client) Conn() *websocket.Conn {
 	return c.ws
 }
 
-func (c *Client) Write(msg *Message) {
+func (c *Client) Write(msg *GeneralMessage) {
 	select {
 	case c.ch <- msg:
 	default:
@@ -74,8 +81,8 @@ func (c *Client) listenWrite() {
 
 		// send message to the client
 		case msg := <-c.ch:
-			log.Println("Send:", msg)
-			websocket.JSON.Send(c.ws, msg)
+			log.Println("Send:", *msg)
+			websocket.JSON.Send(c.ws, *msg)
 
 		// receive done request
 		case <-c.doneCh:
@@ -100,15 +107,21 @@ func (c *Client) listenRead() {
 
 		// read data from websocket connection
 		default:
-			var msg Message
+			var msg GeneralMessage
 			err := websocket.JSON.Receive(c.ws, &msg)
 			if err == io.EOF {
 				c.doneCh <- true
 			} else if err != nil {
 				c.server.Err(err)
 			} else {
-				msg.Author = c.name
-				c.server.SendAll(&msg)
+				if msg.Cmd != nil {
+					log.Print("A command! ", *msg.Cmd)
+					c.server.HandleCommand(&ClientCommand{c, msg.Cmd})
+				} else {
+					log.Print(msg)
+					msg.Author = &c.name
+					c.server.SendAll(&msg)
+				}
 			}
 		}
 	}

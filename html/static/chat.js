@@ -9,20 +9,57 @@ function SendMessage(socket) {
         return;
     }
 
-    var message = {"message": data};
-    // console.log(JSON.stringify(message))
+    if ($(".contact-selected").text() == "") {
+        return;
+    }
+
+    var message = {"message": data, "chat": $(".contact-selected").text()};
     socket.send(JSON.stringify(message));
 }
 
 function ReceiveMessage(event) {
     var message = $.parseJSON(event.data);
 
+    if (message.message != null) {
+        HandleMessage(message);
+    } else if (message.chats != null) {
+        HandleChatList(message);
+    }
+}
+
+function HandleMessage(message) {
     var messageString = $("<li class=\"message\"></li>");
     messageString.append($("<strong></strong>").text(message.author + ": "));
     messageString.append($("<span></span>").text(message.message));
     $("#chat-messages").append(messageString);
 
     $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
+}
+
+function HandleChatList(message) {
+    for (var chat in message.chats) {
+        console.log(message.chats[chat], "!")
+
+        var chatString = $("<div class=\"contact\"></div>");
+        chatString.append($("<div class=\"contact-element contact-name\"></div>").text(message.chats[chat]));
+        // chatString.append($("<div class=\"contact-element contact-message\"></div>").text("Sample text?"));
+        $(".contacts").append(chatString);
+
+        chatString.click(chatString, SelectChat);
+    }
+}
+
+function SelectChat(event) {
+
+    socket.send(JSON.stringify({"command": {"command": "chat-select", "argument": event.data.find(".contact-element").text()}}))
+
+    // change style
+    selectedChat = event.data;
+    selectedChat.siblings().removeClass("contact-selected")
+    selectedChat.addClass('contact-selected')
+
+    $("#chat-messages").empty()
+    // console.log(event.data.find(".contact-element").text(), "!!!!!")
 }
 
 function CloseConnection() {
@@ -46,7 +83,7 @@ function OpenConnection(socket) {
 }
 
 $(function() {
-    var socket = new WebSocket("wss://chat.monory.org/ws");
+    socket = new WebSocket("wss://chat.monory.org/ws");
 
     socket.onopen = function() {
         OpenConnection(socket);
