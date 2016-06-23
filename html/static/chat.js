@@ -24,6 +24,8 @@ function ReceiveMessage(event) {
         HandleMessage(message);
     } else if (message.chats != null) {
         HandleChatList(message);
+    } else if (message.command != null) {
+        HandleCommand(message);
     }
 }
 
@@ -37,6 +39,8 @@ function HandleMessage(message) {
 }
 
 function HandleChatList(message) {
+    $(".contacts").empty()
+
     for (var chat in message.chats) {
         console.log(message.chats[chat], "!")
 
@@ -46,6 +50,14 @@ function HandleChatList(message) {
         $(".contacts").append(chatString);
 
         chatString.click(chatString, SelectChat);
+    }
+}
+
+function HandleCommand(message) {
+    switch (message.command.command) {
+        case "error":
+            alert(message.command.argument)
+            break;
     }
 }
 
@@ -85,6 +97,14 @@ function OpenConnection(socket) {
 
     // $(".message-text").prop("disabled", false);
     // $(".message-button").prop("disabled", false);
+}
+
+function NewChat() {
+    var name = prompt("Enter chat name:")
+
+    if (name != null && name != "") {
+        socket.send(JSON.stringify({"command": {"command": "new-chat", "argument": name}}))
+    }
 }
 
 $(function() {

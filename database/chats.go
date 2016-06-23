@@ -28,3 +28,8 @@ func GetChats(db *sql.DB) []string {
 
 	return result
 }
+
+func MakeChat(db *sql.DB, name string) error {
+	_, err := db.Exec("INSERT INTO chats (name) VALUES ($1)", name)
+	return err
+}

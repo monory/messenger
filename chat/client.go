@@ -63,6 +63,14 @@ func (c *Client) Write(msg *GeneralMessage) {
 	}
 }
 
+func (c *Client) Error(err string) {
+	var sent GeneralMessage
+	sent.Cmd = &Command{"error", err}
+
+	log.Println("ERROR:", err)
+	c.Write(&sent)
+}
+
 func (c *Client) Done() {
 	c.doneCh <- true
 }

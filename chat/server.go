@@ -86,8 +86,6 @@ func (s *Server) sendChats(c *Client) {
 	ch := ChatList(database.GetChats(s.db))
 	msg.Chats = &ch
 
-	log.Println("!!!!!", msg)
-
 	c.Write(&msg)
 }
 
@@ -105,6 +103,13 @@ func (s *Server) handleCommand(cmd *ClientCommand) {
 		log.Println(cmd.Client.name, "selected chat", cmd.Command.Arg)
 		cmd.Client.activeChat = cmd.Command.Arg
 		s.sendPastMessages(cmd.Client, cmd.Command.Arg)
+	case "new-chat":
+		err := database.MakeChat(s.db, cmd.Command.Arg)
+		if err != nil {
+			cmd.Client.Error("Cannot do this")
+			return
+		}
+		s.sendChats(cmd.Client)
 	}
 }
 
