@@ -9,34 +9,100 @@ body {
     flex-direction: column;
 }
 
+
 .header {
     flex: 0 0 60px;
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
+}
 
-    background-color: lightblue;
+.welcome-message {
+    padding: 20px;
+    flex: 0 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 1.5rem;
+}
+
+.header-spacer {
+    flex: 1 0 0px;
 }
 
 .header-button {
-    flex: 0 1 100px;
+    padding: 20px;
+    flex: 0 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .header-button:hover {
-    background-color: skyblue;
+    background-color: #EEE;
 }
 
-.contacts {
-    flex: 1 1 200px;
 
-    background-color: lightgreen;
-}
 
 .content {
+    border-top: 1px solid #DDD;
+
     display: flex;
     flex: 1 0 0px;
     flex-direction: row;
 }
+
+.contacts {
+    border-right: 1px solid #DDD;
+
+    flex: 1 1 200px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.contact {
+    box-sizing: border-box;
+    border-bottom: 1px solid #DDD;
+    flex: 0 0 70px;
+
+    padding: 10px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.contact:hover {
+    background-color: #EEE;
+}
+
+.contact-selected {
+    background-color: #117;
+    color: white;
+}
+
+.contact-selected:hover {
+    background-color: #228;
+}
+
+.contact-element {
+    flex: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-name {
+    font-weight: bold;
+}
+
+.contact-message {
+    color: #555;
+}
+
 
 .chat {
     flex: 5 1 300px;
@@ -46,10 +112,41 @@ body {
 }
 
 .chat-header {
-    flex: 0 0 36px;
+    flex: 0 0 60px;
+    border-bottom: 1px solid #DDD;
 
-    background-color: pink;
+    box-sizing: border-box;
+    padding: 10px;
+
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    justify-content: flex-start;
 }
+
+.header-message {
+    font-weight: bold;
+    font-size: 1.2rem;
+
+    padding: 10px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-submessage {
+    color: #555;
+    font-size: 1.2rem;
+
+    padding: 10px;
+    padding-left: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 
 .chat-messages {
     flex: 10 0 0px;
@@ -64,8 +161,7 @@ body {
 
 .message {
     padding: 10px;
-
-    font-size: 18px;
+    font-size: 1.2rem;
 }
 
 .message:nth-child(even) {
@@ -76,28 +172,18 @@ body {
     background-color: #EEE;
 }
 
-.message {
-}
 
 .chat-footer {
     flex: 0 0 72px;
 
     display: flex;
-
-    //background-color: lime;
-}
-
-#chat-form {
-    flex: 1 1 0px;
-    display: flex;
-}
-
-#chat-form > * {
-    margin: 5px;
 }
 
 .message-text {
     flex: 1 1 0px;
+
+    border: 0px;
+    border-top: 1px solid #DDD;
 
     padding: 5px;
 

@@ -7,7 +7,7 @@ import (
 )
 
 func Start() {
-	db := database.ConnectDatabase("user=chat_backend password=chat_backend_password dbname=messenger")
+	db := database.ConnectDatabase("user=chat_backend dbname=messenger")
 	err := db.Ping()
 	if err != nil {
 		log.Print(err)

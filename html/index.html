@@ -8,26 +8,40 @@
 </head>
 <body>
     <div class="header">
-        <div class="header-button">Button 1</div>
-        <div class="header-button">Button 2</div>
-        <div class="header-button">Button 3</div>
+        <div class="welcome-message">
+            Добро пожаловать. Снова.
+        </div>
+        <div class="header-spacer"></div>
+        <div class="header-button" onclick="NewChat()">
+            New chat
+        </div>
+        <div class="header-button">
+            Log out
+        </div>
     </div>
     <div class="content">
-        <div class="contacts">contacts</div>
+        <div class="contacts">
+        </div>
         <div class="chat">
-            <div class="chat-header">chat-header</div>
+            <div class="chat-header">
+                <div class="header-message">
+                </div>
+                <div class="header-submessage">
+                </div>
+            </div>
             <div class="chat-messages">
                 <ul id="chat-messages">
 
                 </ul>
             </div>
             <div class="chat-footer">
-                <textarea autofocus placeholder="Input message..." name="chat-text" class="message-text"></textarea>
-                <input type="submit" value="Send" class="message-button"/>
+                <textarea autofocus placeholder="Input message..." name="chat-text" class="message-text" disabled></textarea>
+                <input type="submit" value="Send" class="message-button" disabled/>
             </div>
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="/static/sjcl.js"></script>
     <script src="/static/chat.js"></script>
 </body>
 </html>
