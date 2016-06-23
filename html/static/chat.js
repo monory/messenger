@@ -17,6 +17,14 @@ function SendMessage(socket) {
 function ReceiveMessage(event) {
     var message = $.parseJSON(event.data);
 
+    if (message.message != null) {
+        HandleMessage(message);
+    } else if (message.chats != null) {
+        HandleChatList(message);
+    }
+}
+
+function HandleMessage(message) {
     var messageString = $("<li class=\"message\"></li>");
     messageString.append($("<strong></strong>").text(message.author + ": "));
     messageString.append($("<span></span>").text(message.message));
@@ -24,6 +32,18 @@ function ReceiveMessage(event) {
 
     $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
 }
+
+function HandleChatList(message) {
+    for (var chat in message.chats) {
+        console.log(message.chats[chat], "!")
+
+        var chatString = $("<div class=\"contact\"></div>");
+        chatString.append($("<div class=\"contact-element contact-name\"></div>").text(message.chats[chat]));
+        chatString.append($("<div class=\"contact-element contact-message\"></div>").text("Sample text?"));
+        $(".contacts").append(chatString);
+    }
+}
+
 
 function CloseConnection() {
     $(".message-text").prop("disabled", true);
