@@ -9,7 +9,8 @@ function SendMessage(socket) {
         return;
     }
 
-    var message = {"body": data};
+    var message = {"message": data};
+    // console.log(JSON.stringify(message))
     socket.send(JSON.stringify(message));
 }
 
@@ -18,7 +19,7 @@ function ReceiveMessage(event) {
 
     var messageString = $("<li class=\"message\"></li>");
     messageString.append($("<strong></strong>").text(message.author + ": "));
-    messageString.append($("<span></span>").text(message.body));
+    messageString.append($("<span></span>").text(message.message));
     $("#chat-messages").append(messageString);
 
     $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
